@@ -21,14 +21,17 @@ export interface PureGlyfConfig {
 export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
     const virtualModuleId = 'pure-glyf/icons';
     const resolvedVirtualModuleId = '\0' + virtualModuleId;
+    const virtualModuleIdCSS = 'pure-glyf/icons.css';
+    const resolvedVirtualModuleIdCSS = '\0' + virtualModuleIdCSS;
     const dtsPath = config.dts || 'pure-glyf.d.ts';
 
     let lastResult: GeneratorResult | null = null;
     let server: ViteDevServer | null = null;
+    let isDev = false;
 
     function regenerate() {
         try {
-            lastResult = generateIconsCode(config.icons);
+            lastResult = generateIconsCode(config.icons, isDev);
             // Write generated types to disk for IDE support
             fs.writeFileSync(path.resolve(process.cwd(), dtsPath), lastResult.dts);
             
@@ -51,6 +54,10 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
     return {
         name: 'vite-plugin-pure-glyf',
         enforce: 'pre',
+        
+        configResolved(resolvedConfig) {
+            isDev = resolvedConfig.command === 'serve';
+        },
         
         configureServer(_server) {
             server = _server;
@@ -80,13 +87,19 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
             if (id === virtualModuleId) {
                 return resolvedVirtualModuleId;
             }
+            if (id === virtualModuleIdCSS) {
+                return resolvedVirtualModuleIdCSS;
+            }
         },
 
         load(id) {
             if (id === resolvedVirtualModuleId) {
-                // Return cached result. 
-                // We assume buildStart has already populated lastResult.
+                // Return cached JS mapping
                 return lastResult!.code;
+            }
+            if (id === resolvedVirtualModuleIdCSS) {
+                // Return cached CSS block
+                return lastResult!.css;
             }
         }
     };

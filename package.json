@@ -1,8 +1,24 @@
 {
 	"name": "pure-glyf",
 	"version": "0.1.0",
-	"description": "Tree-shakeable SVG icon library using CSS mask injection",
+	"description": "Vite plugin and runtime for compiling SVGs into tree-shakeable CSS masks",
 	"type": "module",
+	"keywords": [
+		"icons",
+		"svg",
+		"css",
+		"tree-shaking",
+		"vite-plugin"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/eddow/pure-glyf.git"
+	},
+	"bugs": {
+		"url": "https://github.com/eddow/pure-glyf/issues"
+	},
+	"homepage": "https://github.com/eddow/pure-glyf#readme",
+	"author": "eddow <eddow@ownk.com>",
 	"sideEffects": false,
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
@@ -30,6 +46,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build && tsc --emitDeclarationOnly",
+		"build:watch": "vite build --watch",
 		"preview": "vite preview"
 	},
 	"devDependencies": {
@@ -39,12 +56,6 @@
 		"vite": "^6.0.0",
 		"vite-plugin-dts": "^4.0.0"
 	},
-	"keywords": [
-		"icons",
-		"svg",
-		"css",
-		"tree-shaking"
-	],
 	"license": "MIT",
 	"packageManager": "pnpm@10.7.1+sha512.2d92c86b7928dc8284f53494fb4201f983da65f0fb4f0d40baafa5cf628fa31dae3e5968f12466f17df7e97310e30f343a648baea1b9b350685dafafffdf5808"
 }

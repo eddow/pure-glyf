@@ -31,6 +31,7 @@ export interface IconDef {
 
 export interface GeneratorResult {
     code: string;
+    css: string;
     dts: string;
 }
 
@@ -55,19 +56,20 @@ function scanDirectory(dir: string, rootDir: string): string[] {
     return results;
 }
 
-export function generateIconsCode(config: Record<string, string>): GeneratorResult {
+export function generateIconsCode(config: Record<string, string>, isDev = false): GeneratorResult {
     const icons: IconDef[] = [];
 
     for (const [prefix, dirPath] of Object.entries(config)) {
-        if (!fs.existsSync(dirPath)) {
-            console.warn(`[pure-glyf] Warning: Icon directory not found: ${dirPath}`);
+        const absolutePath = path.resolve(process.cwd(), dirPath);
+        if (!fs.existsSync(absolutePath)) {
+            console.warn(`[pure-glyf] Warning: Icon directory not found: ${absolutePath}`);
             continue;
         }
 
-        const files = scanDirectory(dirPath, dirPath);
+        const files = scanDirectory(absolutePath, absolutePath);
 
         files.forEach(relPath => {
-            const fullPath = path.join(dirPath, relPath);
+            const fullPath = path.join(absolutePath, relPath);
             const content = fs.readFileSync(fullPath, 'utf-8');
             
             // Naming: Prefix + RelativePath (sanitized)
@@ -81,11 +83,8 @@ export function generateIconsCode(config: Record<string, string>): GeneratorResu
             
             const dataUri = svgToDataUri(content);
 
-            const css = `
-.${className} {
-    mask: url("${dataUri}") no-repeat center / contain;
-    -webkit-mask: url("${dataUri}") no-repeat center / contain;
-}`;
+            // Optimized CSS: only mask-image since common props are in .pure-glyf-icon
+            const css = `.${className}{mask-image:url("${dataUri}");-webkit-mask-image:url("${dataUri}");}`;
             icons.push({ name: varName, css });
         });
     }
@@ -98,18 +97,29 @@ export function generateIconsCode(config: Record<string, string>): GeneratorResu
         ``
     ];
 
-    // Loop removed (refactored below)
-    
-    // START REFACTOR of loop for clarity
-    const exportStatements = icons.map(icon => {
-         // Extract classname from the CSS to be safe/DRY
-         const match = icon.css.match(/^\s*\.(\S+)\s/);
-         const className = match ? match[1] : 'error-class';
-         return `export const ${icon.name} = /*#__PURE__*/ (() => {
+    let allCSS = '';
+    let exportStatements: string[];
+
+    if (isDev) {
+        // Dev mode: Offload CSS to a separate virtual module for parallel parsing
+        codeLines.unshift(`import 'pure-glyf/icons.css';`);
+        allCSS = icons.map(i => i.css).join('');
+        exportStatements = icons.map(icon => {
+            const match = icon.css.match(/^\s*\.(\S+)\{/);
+            const className = match ? match[1] : 'error-class';
+            return `export const ${icon.name} = "pure-glyf-icon ${className}";`;
+        });
+    } else {
+        // Prod mode: Keep IIFEs for tree-shaking
+        exportStatements = icons.map(icon => {
+            const match = icon.css.match(/^\s*\.(\S+)\{/);
+            const className = match ? match[1] : 'error-class';
+            return `export const ${icon.name} = /*#__PURE__*/ (() => {
     injectCSS(\`${icon.css}\`);
     return "pure-glyf-icon ${className}";
 })();`;
-    });
+        });
+    }
 
     const code = codeLines.concat(exportStatements).join('\n');
 
@@ -128,5 +138,5 @@ export function generateIconsCode(config: Record<string, string>): GeneratorResu
     
     const dts = dtsLines.join('\n');
 
-    return { code, dts };
+    return { code, css: allCSS, dts };
 }

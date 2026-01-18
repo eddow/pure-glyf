@@ -18,6 +18,12 @@ export let sheet = `
     width: 1em;
     height: 1em;
     background-color: currentColor;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
 }`;
 
 let styleElement: HTMLStyleElement | null = null;

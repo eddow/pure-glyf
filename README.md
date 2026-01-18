@@ -1,14 +1,29 @@
 # pure-glyf
 
-A tree-shakeable SVG icon library that uses CSS mask injection.
+**Vite plugin and runtime to compile SVG icons into tree-shakeable CSS masks for modern web applications.**
+
+`pure-glyf` takes a different approach to icon management. Instead of inlining SVGs (bloating your DOM) or using sprites (complexity), it converts your SVGs into CSS classes that inject their styles on demand. The result? Zero runtime overhead for unused icons, perfect tree-shaking, and a developer experience that feels like magic.
+
+---
 
 ## Features
 
-- **Tree-Shakeable**: Only the icons you import are included in your bundle.
-- **Zero Runtime Overhead**: Icons are just CSS class strings. Styles are injected once on demand.
-- **SSR Compatible**: Supports server-side rendering with critical CSS extraction.
-- **Vite Integration**: Automatically generates icon exports from your SVG files.
-- **Themable**: Icons inherit `color` via `currentColor`.
+- 🌳 **True Tree-Shaking**: Only the icons you actually import end up in your final bundle.
+- 🚀 **Zero Runtime Overhead**: Icons are just strings (CSS class names). No heavy JS objects or runtime parsers.
+- ⚡ **On-Demand Injection**: CSS for an icon is only injected into the page when you import it.
+- 🧩 **Vite Integration**: A dedicated Vite plugin automates the entire process.
+- 🎨 **Themable**: Icons automatically inherit `currentColor`.
+- 🖥️ **SSR Ready**: Built-in support for server-side rendering (critical CSS extraction).
+- 🏷️ **Type-Safe**: Generated TypeScript definitions for your specific icon set.
+
+## Why pure-glyf?
+
+| Method | JS Bundle Size | DOM Size | Tree Shaking | Developer Experience |
+| :--- | :--- | :--- | :--- | :--- |
+| **Inline SVGs** | ❌ Heavy | ❌ Bloated | ✅ Good | 😐 Verbose JSX |
+| **SVG Sprites** | ✅ Light | ✅ Light | ❌ Hard | 😫 Manual Management |
+| **Icon Fonts** | ✅ Light | ✅ Light | ❌ None | 😐 FOUT / Accessibility |
+| **pure-glyf** | ✅ **Minimal** | ✅ **Minimal** | ✅ **Perfect** | 😍 **Auto-generated** |
 
 ## Installation
 
@@ -16,13 +31,34 @@ A tree-shakeable SVG icon library that uses CSS mask injection.
 npm install pure-glyf
 # or
 pnpm add pure-glyf
+# or
+yarn add pure-glyf
 ```
 
-## Vite Configuration
+## Usage
 
-Add the `pureGlyfPlugin` to your `vite.config.ts`. This plugin generates a virtual module `pure-glyf/icons` based on your SVG directories.
+### 1. Structure Your Icons
+
+Place your SVG files in a directory. You can have multiple directories (e.g., for different icon sets).
+
+```
+src/
+  assets/
+    icons/
+      home.svg
+      user.svg
+      settings.svg
+```
+
+#### Using Icons from npm
+You can also source icons directly from installed packages (e.g., `@tabler/icons`, `@mdi/svg`, `heroicons`). Just install them as dev dependencies!
+
+### 2. Configure Vite
+
+Add `pureGlyfPlugin` to your `vite.config.ts`.
 
 ```typescript
+// vite.config.ts
 import { defineConfig } from 'vite';
 import { pureGlyfPlugin } from 'pure-glyf/plugin';
 
@@ -30,98 +66,200 @@ export default defineConfig({
   plugins: [
     pureGlyfPlugin({
       icons: {
-        // map 'Prefix' to 'Path/to/icons'
-        // Result: tablerHome, tablerUser, etc.
-        tabler: 'node_modules/@tabler/icons/icons/outline',
-        custom: './src/assets/icons'
+        // 1. Local icons
+        // Usage: 'custom' + 'Home' -> customHome
+        custom: './src/assets/icons',
+        
+        // 2. Common Icon Libraries (examples)
+        
+        // Tabler Icons (Install: pnpm add -D @tabler/icons) - outline
+        // Usage: tablerHome, tablerUser
+        tabler: './node_modules/@tabler/icons/icons/outline',
+
+        // -- or --
+
+        // Tabler Icons (Install: pnpm add -D @tabler/icons) - all icons
+        // Usage: tablerOutlineHome, tablerFilledUser
+        tabler: './node_modules/@tabler/icons/icons',
+        
+        // Material Design Icons (Install: pnpm add -D @mdi/svg)
+        // Usage: mdiAccount, mdiHome
+        mdi: './node_modules/@mdi/svg/svg',
+        
+        // Heroicons (Install: pnpm add -D heroicons)
+        // Usage: heroHome, heroUser
+        hero: './node_modules/heroicons/24/outline',
+        
+        // Lucide (Install: pnpm add -D lucide-static)
+        // Usage: lucHome, lucUser
+        luc: './node_modules/lucide-static/icons',
       },
-      // Optional: Path for generated .d.ts file
       dts: 'src/pure-glyf-icons.d.ts' 
     })
   ]
 });
 ```
 
-## Usage
+### 3. Configure Rollup (Alternative)
 
-Import icons directly from the virtual module `pure-glyf/icons`. The export name is constructed as `[prefix][PascalCaseFilename]`.
+If you are using Rollup without Vite, use the plugin directly.
+
+> **Note**: You must use `@rollup/plugin-node-resolve` so Rollup can resolve the `pure-glyf` runtime.
+
+```javascript
+// rollup.config.js
+import resolve from '@rollup/plugin-node-resolve';
+import { pureGlyfPlugin } from 'pure-glyf/plugin';
+
+export default {
+  // ...
+  plugins: [
+    resolve(), // Required to resolve 'pure-glyf' runtime
+    pureGlyfPlugin({
+       icons: {
+         // ... same configuration as Vite
+         myIcon: './src/assets/icons'
+       }
+    })
+  ]
+};
+```
+
+### 3. Mount Styles
+
+In your application's entry point (e.g., `main.tsx` or `index.ts`), call `mount()` to set up the style injection system.
+
+```typescript
+// You can import 'mount' from the main package OR the virtual module
+import { mount } from 'pure-glyf'; 
+// import { mount } from 'pure-glyf/icons'; // Also works!
+
+mount(); // Injects the base styles and prepares the style tag
+```
+
+### 4. Use Icons
+
+Import icons from the virtual module `pure-glyf/icons`. The export name is `[Prefix][PascalCaseFilename]`.
 
 ```tsx
-import { mount } from 'pure-glyf'; // or from 'pure-glyf/icons'
-import { tablerHome, tablerUser } from 'pure-glyf/icons';
+import { customHome, customUser } from 'pure-glyf/icons';
 
-// In your app entry point (e.g. main.tsx)
-mount();
-
-// Usage in JSX/TSX
-// The import is just a string containing the class names:
-// "pure-glyf-icon glyf-tabler-home"
 function App() {
+  // 'customHome' is just a string: "pure-glyf-icon glyf-custom-home"
+  
   return (
-    <div>
-       <span className={tablerHome} />
-       <button>
-         <i className={tablerUser} /> Profile
-       </button>
-    </div>
+    <nav>
+      {/* Use it as a class name on any element (usually <span> or <i>) */}
+      <span className={customHome} />
+      
+      <button>
+        <i className={customUser} /> Profile
+      </button>
+    </nav>
   );
 }
 ```
 
-### Styling
+## Configuration
 
-Icons automatically get the `.pure-glyf-icon` base class:
+The `pureGlyfPlugin` accepts the following options:
+
+### `icons` (Required)
+A record mapping prefixes to directory paths.
+- **Key**: The prefix for the generated variable names (e.g., `tabler` -> `tablerHome`).
+- **Value**: The relative path to the directory containing `.svg` files.
+
+### `dts` (Optional)
+Path to generate the TypeScript declaration file. 
+- **Default**: `pure-glyf.d.ts` in the project root.
+- **Recommendation**: Set this to a path included in your `tsconfig.json` (e.g., `src/pure-glyf-icons.d.ts`).
+
+## styling
+
+Icons are rendered as CSS masks. They inherit the text color (`currentColor`) by default.
+
+### Default Styles
+Every icon comes with the `.pure-glyf-icon` class:
 
 ```css
 .pure-glyf-icon {
   display: inline-block;
   width: 1em;
   height: 1em;
-  background-color: currentColor;
+  background-color: currentColor; /* Matches text color */
   mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: center;
 }
 ```
 
-You can size or color them using standard CSS:
+### Custom Sizing & Coloring
+Since they are just elements with a background color, you style them with standard CSS:
 
 ```css
-.my-icon {
-  color: red;
-  font-size: 24px; /* Sets width/height via em */
+.my-huge-icon {
+  font-size: 3rem; /* 3x normal text size */
+  color: #ff0000;  /* Red icon */
 }
 ```
 
-## How It Works
-
-1.  **Code Generation**: The Vite plugin scans your icon directories and generates a virtual module.
-2.  **Pure IIFEs**: Each exported icon is wrapped in a `/*#__PURE__*/` IIFE that calls `injectCSS`.
-    ```javascript
-    export const tablerHome = /*#__PURE__*/ (() => {
-        injectCSS("...");
-        return "pure-glyf-icon glyf-tabler-home";
-    })();
-    ```
-3.  **On-Demand Injection**: The `injectCSS` function records the usage. You call `mount()` to inject the consolidated CSS into the `<head>`.
-4.  **Tree Shaking**: If an icon is not imported, the IIFE is never executed (and Dead Code Elimination removes it entirely), so its CSS is never included.
-
 ## Server-Side Rendering (SSR)
 
-For SSR, you can extract the accumulated CSS using the `sheet` export.
+`pure-glyf` supports SSR by allowing you to extract the CSS required for the rendered page.
 
 ```typescript
 import { sheet } from 'pure-glyf';
+import { renderToString } from 'react-dom/server';
 
-// In your SSR renderer:
+// 1. Render your app
 const html = renderToString(<App />);
-const styles = `<style>${sheet}</style>`;
 
-// Inject `styles` into your HTML template's <head>
+// 2. Extract the accumulated CSS
+// 'sheet' contains the base styles + styles for all icons used during render
+const css = sheet;
+
+// 3. Inject into your HTML template
+const fullHtml = `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <style>${css}</style>
+    </head>
+    <body>
+      <div id="root">${html}</div>
+    </body>
+  </ul>
+`;
 ```
 
-# TODO
+## Architecture & Performance
 
-- [ ] Have it js-compatible
-- [ ] Perhaps include some common libraries by default?
-- [ ] Make sure it's rollup compatible
+`pure-glyf` uses a hybrid strategy to deliver the best developer experience without compiling performance costs.
+
+### Development Mode: Parallel Parsing
+In development, decoding thousands of Data URIs in JavaScript can be slow (blocking the main thread).
+- **Mechanism**: The plugin moves all icon CSS into a separate virtual CSS module (`pure-glyf/icons.css`).
+- **Benefit**: This offloads parsing to the browser's native CSS engine, which runs in parallel. The main JavaScript module remains tiny and instant to load.
+- **Result**: Near-instant HMR and page reloads, even with huge icon sets like Material Design or Tabler.
+
+### Production Mode: Perfect Tree-Shaking
+In production, we prioritize bundle size.
+- **Mechanism**: Icons are compiled into side-effect-free IIFEs (Immediately Invoked Function Expressions) annotated with `/*#__PURE__*/`.
+- **Logic**: 
+  ```javascript
+  export const myIcon = /*#__PURE__*/ (() => {
+      injectCSS("..."); // Only runs if 'myIcon' is actually used
+      return "pure-glyf-icon glyf-my-icon";
+  })();
+  ```
+- **Benefit**: If you don't import `myIcon`, your bundler (Vite/Rollup/Esbuild) completely removes the code *and* the associated CSS string.
+
+### The Virtual Module `pure-glyf/icons`
+The plugin orchestrates everything by creating a virtual module `pure-glyf/icons`. This module re-exports the core runtime functions for convenience:
+- `mount()`: Injects the styles.
+- `sheet`: Access the accumulated CSS string.
+- `onInject()`: Subscribe to new style injections.
+
+## License
+
+MIT

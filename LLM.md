@@ -33,12 +33,59 @@ Exports:
 - `./plugin`: Vite plugin.
 - `./inject`: Internal injection utility (exposed for generated code).
 
-## CSS Handling
-- **Base Class**: `.pure-glyf-icon`.
-- **Icon Class**: Sets the `mask-image` to the SVG data URI.
-- **Browser**: single `<style>` tag, updated by `injectCSS` (if mounted).
-- **SSR**: Exports `sheet` string.
+## Performance Optimization
 
-## Performance & Caching
-- **Icon Generation**: Occurs eagerly on server start/build (`buildStart`) and on file changes.
-- **On Request**: The `load` hook simply returns the cached result from memory (`lastResult`), avoiding expensive file system scanning during module resolution.
+The library uses a hybrid strategy to handle large icon sets (like Tabler/MDI).
+
+### Development Mode
+- **Mechanism**: All icon styles are moved to a virtual CSS module (`pure-glyf/icons.css`).
+- **Parallel Parsing**: Offloads Data URI parsing to the browser's CSS engine, making the main JS module near-instant.
+- **Implementation**: The JS module exports simple string class-name mapping constants.
+
+### Production Mode
+- **Mechanism**: Icons are bundled as tree-shakeable constants using IIFEs and `/*#__PURE__*/` annotations.
+- **Tree-Shaking**: Ensures only used icons (and their CSS strings) are included in the final bundle.
+- **Implementation**: `injectCSS` is called lazily when an icon is first used.
+
+## Usage Details
+- **Mount Requirements**: `mount()` must be called once (typically in your App's entry point) to inject the styles into the DOM.
+- **Base Class**: `.pure-glyf-icon` for shared styles (size, display, mask resets).
+- **SSR**: Access `sheet` to get the accumulated CSS.
+
+## Configuration Patterns
+
+### Vite
+```typescript
+// vite.config.ts
+import { pureGlyfPlugin } from 'pure-glyf/plugin';
+
+export default defineConfig({
+  plugins: [
+    pureGlyfPlugin({
+      icons: {
+        prefix: './path/to/icons' // e.g. prefix="icon" -> iconHome
+      }
+    })
+  ]
+});
+```
+
+### Rollup
+Requires `@rollup/plugin-node-resolve` to handle runtime imports.
+
+```javascript
+// rollup.config.js
+import resolve from '@rollup/plugin-node-resolve';
+import { pureGlyfPlugin } from 'pure-glyf/plugin';
+
+export default {
+  plugins: [
+    resolve(), 
+    pureGlyfPlugin({
+      icons: {
+        prefix: './path/to/icons'
+      }
+    })
+  ]
+};
+```
