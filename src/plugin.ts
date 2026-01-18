@@ -54,7 +54,6 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
         
         configureServer(_server) {
             server = _server;
-            regenerate(); // Generate on start
 
             // Watch icon directories
             Object.values(config.icons).forEach(dir => {
@@ -73,7 +72,7 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
         },
 
         buildStart() {
-            // Ensure types exist for build time type checking (if not running dev server)
+            // Generate on start (dev or build)
             regenerate();
         },
 
@@ -85,8 +84,8 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
 
         load(id) {
             if (id === resolvedVirtualModuleId) {
-                if (!lastResult) regenerate();
-                // console.log('DEBUG CODE:', lastResult!.code); // Uncomment to debug
+                // Return cached result. 
+                // We assume buildStart has already populated lastResult.
                 return lastResult!.code;
             }
         }

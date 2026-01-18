@@ -38,3 +38,7 @@ Exports:
 - **Icon Class**: Sets the `mask-image` to the SVG data URI.
 - **Browser**: single `<style>` tag, updated by `injectCSS` (if mounted).
 - **SSR**: Exports `sheet` string.
+
+## Performance & Caching
+- **Icon Generation**: Occurs eagerly on server start/build (`buildStart`) and on file changes.
+- **On Request**: The `load` hook simply returns the cached result from memory (`lastResult`), avoiding expensive file system scanning during module resolution.

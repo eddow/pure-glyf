@@ -124,3 +124,4 @@ const styles = `<style>${sheet}</style>`;
 
 - [ ] Have it js-compatible
 - [ ] Perhaps include some common libraries by default?
+- [ ] Make sure it's rollup compatible
