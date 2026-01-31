@@ -6,13 +6,11 @@
  * styles are NOT injected automatically. You must call `mount()` to inject them into the DOM.
  */
 
-const injectedStyles = new Set<string>();
+const injectedStyles = new Map<string, string>();
+const subscribers = new Set<(css: string) => void>();
+let styleElement: HTMLStyleElement | null = null;
 
-/**
- * Accumulated CSS string for Server-Side Rendering (SSR).
- * Reset it if needed between requests in a server environment.
- */
-export let sheet = `
+const baseSheet = `
 .pure-glyf-icon {
     display: inline-block;
     width: 1em;
@@ -26,7 +24,11 @@ export let sheet = `
     -webkit-mask-size: contain;
 }`;
 
-let styleElement: HTMLStyleElement | null = null;
+/**
+ * Accumulated CSS string for Server-Side Rendering (SSR).
+ * Contains all injected styles.
+ */
+export let sheet = baseSheet;
 
 /**
  * Mounts the styles to the DOM.
@@ -42,17 +44,19 @@ export function mount(): void {
     document.head.appendChild(styleElement);
 }
 
-// Subscribers for reactive injection
-const subscribers = new Set<(css: string) => void>();
-
 export function onInject(callback: (css: string) => void): void {
     subscribers.add(callback);
 }
 
 export function injectCSS(css: string): void {
-    if (injectedStyles.has(css)) return;
+    // Extract class name from CSS to use as key
+    // matches .classname { ... }
+    const match = css.match(/^\.([\w-]+)/);
+    const className = match ? match[1] : css;
 
-    injectedStyles.add(css);
+    if (injectedStyles.has(className)) return;
+
+    injectedStyles.set(className, css);
     sheet += css;
 
     // Only update the DOM if we are already mounted
@@ -62,4 +66,22 @@ export function injectCSS(css: string): void {
 
     // Notify subscribers
     subscribers.forEach(cb => cb(css));
+}
+
+/**
+ * Scans the provided HTML for usage of injected icons and returns 
+ * a critical CSS string containing only the necessary styles.
+ * 
+ * @param html The full HTML string to scan
+ */
+export function extractCriticalCSS(html: string): string {
+    const usedClasses = new Set<string>();
+    
+    for (const [className, css] of injectedStyles.entries()) {
+        if (html.includes(className)) {
+            usedClasses.add(css);
+        }
+    }
+
+    return baseSheet + Array.from(usedClasses).join('');
 }

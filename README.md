@@ -1,5 +1,7 @@
 # pure-glyf
 
+[![npm version](https://badge.fury.io/js/pure-glyf.svg)](https://badge.fury.io/js/pure-glyf)
+
 **Vite plugin and runtime to compile SVG icons into tree-shakeable CSS masks for modern web applications.**
 
 `pure-glyf` takes a different approach to icon management. Instead of inlining SVGs (bloating your DOM) or using sprites (complexity), it converts your SVGs into CSS classes that inject their styles on demand. The result? Zero runtime overhead for unused icons, perfect tree-shaking, and a developer experience that feels like magic.

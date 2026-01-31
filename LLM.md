@@ -51,6 +51,20 @@ The library uses a hybrid strategy to handle large icon sets (like Tabler/MDI).
 - **Mount Requirements**: `mount()` must be called once (typically in your App's entry point) to inject the styles into the DOM.
 - **Base Class**: `.pure-glyf-icon` for shared styles (size, display, mask resets).
 - **SSR**: Access `sheet` to get the accumulated CSS.
+- **Critical CSS**: Use `extractCriticalCSS(html)` in SSR to get specific CSS for the rendered HTML.
+
+## SSR Integration
+For optimal performance, avoid injecting the entire stylesheet. Instead, use `extractCriticalCSS`:
+
+```typescript
+import { renderToString } from 'your-framework';
+import { extractCriticalCSS } from 'pure-glyf';
+
+const html = renderToString(<App />);
+const css = extractCriticalCSS(html);
+
+const finalHtml = html.replace('</head>', `<style>${css}</style></head>`);
+```
 
 ## Configuration Patterns
 
