@@ -127,6 +127,27 @@ export default {
 };
 ```
 
+### Low-Level Injection API
+
+For advanced use cases, you can import directly from `pure-glyf/inject`:
+
+```typescript
+import { injectCSS, extractCriticalCSS, sheet, onInject, mount } from 'pure-glyf/inject';
+
+// Manually inject CSS for a custom icon
+injectCSS('.my-custom-icon { mask-image: url("..."); }');
+
+// Extract only the CSS needed for a specific HTML chunk
+const criticalCSS = extractCriticalCSS(html);
+```
+
+**Exports from `pure-glyf/inject`:**
+- `mount()` - Injects the base styles into the DOM
+- `sheet` - Accumulated CSS string for SSR
+- `onInject(callback)` - Subscribe to new style injections
+- `injectCSS(css)` - Manually inject CSS for custom icons
+- `extractCriticalCSS(html)` - Extract only the CSS needed for a specific HTML chunk
+
 ### 3. Mount Styles
 
 In your application's entry point (e.g., `main.tsx` or `index.ts`), call `mount()` to set up the style injection system.
@@ -175,6 +196,28 @@ A record mapping prefixes to directory paths.
 Path to generate the TypeScript declaration file. 
 - **Default**: `pure-glyf.d.ts` in the project root.
 - **Recommendation**: Set this to a path included in your `tsconfig.json` (e.g., `src/pure-glyf-icons.d.ts`).
+
+## Programmatic Generation
+
+If you need to generate icon code outside of the Vite plugin (e.g., for custom build tools), use `pure-glyf/generator`:
+
+```typescript
+import { generateIconsCode } from 'pure-glyf/generator';
+
+const result = generateIconsCode({
+  custom: './src/assets/icons',
+  tabler: './node_modules/@tabler/icons/icons/outline'
+}, false); // false = production mode
+
+// result.code - JavaScript module code
+// result.css - CSS for dev mode
+// result.dts - TypeScript declarations
+```
+
+**Exports from `pure-glyf/generator`:**
+- `generateIconsCode(config, isDev)` - Generate icon code from SVG directories
+- `svgToDataUri(svg)` - Encode SVG string to data URI
+- `IconDef`, `GeneratorResult` - TypeScript interfaces
 
 ## styling
 

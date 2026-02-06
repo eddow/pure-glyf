@@ -92,8 +92,8 @@ export function generateIconsCode(config: Record<string, string>, isDev = false)
     // --- Generate Code ---
     
     const codeLines = [
-        `import { injectCSS, mount, sheet, onInject } from 'pure-glyf';`,
-        `export { mount, sheet, onInject };`,
+        `import { injectCSS, mount, sheet, onInject, extractCriticalCSS } from 'pure-glyf';`,
+        `export { mount, sheet, onInject, extractCriticalCSS };`,
         ``
     ];
 

@@ -33,7 +33,9 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
         try {
             lastResult = generateIconsCode(config.icons, isDev);
             // Write generated types to disk for IDE support
-            fs.writeFileSync(path.resolve(process.cwd(), dtsPath), lastResult.dts);
+            const absoluteDtsPath = path.resolve(process.cwd(), dtsPath);
+            fs.mkdirSync(path.dirname(absoluteDtsPath), { recursive: true });
+            fs.writeFileSync(absoluteDtsPath, lastResult.dts);
             
             // Invalidate module if server exists
             if (server) {
@@ -79,8 +81,10 @@ export function pureGlyfPlugin(config: PureGlyfConfig): Plugin {
         },
 
         buildStart() {
-            // Generate on start (dev or build)
-            regenerate();
+            // Generate on start (dev or build) - this hook runs once per build.
+            if (!lastResult) {
+                regenerate();
+            }
         },
 
         resolveId(id) {

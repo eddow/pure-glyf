@@ -9,7 +9,9 @@ export default defineConfig({
     lib: {
       entry: {
         index: './src/index.ts',
-        plugin: './src/plugin.ts'
+        plugin: './src/plugin.ts',
+        inject: './src/inject.ts',
+        generator: './src/generator.ts'
       },
       formats: ['es', 'cjs'],
       // fileName will be index.js, plugin.js etc
